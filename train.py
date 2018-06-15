@@ -1,32 +1,9 @@
-import csv
 import tensorflow as tf
-import numpy as np
+from preprocessing import read_data, data_aug
 import os
 from evaluate import evaluate
 from tensorflow.contrib.layers import xavier_initializer
 from tensorflow.contrib.layers import l2_regularizer
-
-
-def read_data(path):
-    data = []
-    with open(path) as f:
-        lines = csv.reader(f)
-        for line in lines:
-            data.append(map(int, line))
-    data = np.array(data)
-    label = data[:, 0]
-    data = data[:, 1:]
-    label = (label + 1) / 2
-    return data, label
-
-
-def data_aug(data, label):
-    n, c = data.shape.as_list()
-    label = tf.concat([label, 1 - label], axis=0)
-    reverse_mask = tf.concat([tf.ones([n, 3]), -1 * tf.ones([n, 113])], axis=1)
-    data_reverse = data * reverse_mask
-    data = tf.concat([data, data_reverse], axis=0)
-    return data, label
 
 
 def nn(data, label, wd_rate=None, training=True, reuse=False):
