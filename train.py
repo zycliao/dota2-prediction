@@ -1,5 +1,8 @@
+import pickle
+import time
+
 import tensorflow as tf
-from preprocessing import read_data, data_aug_tf
+from preprocessing import read_data, data_aug_tf, onehot_encode
 import os
 from evaluate import evaluate
 from tensorflow.contrib.layers import xavier_initializer
@@ -10,10 +13,9 @@ def nn(data, label, wd_rate=None, training=True, reuse=False):
     with tf.variable_scope('fcnn', reuse=reuse,
                            initializer=xavier_initializer(),
                            regularizer=l2_regularizer(wd_rate) if training else None):
-        heros = data[:, 3:]
         hidden_nums = 100
         activation = tf.nn.sigmoid
-        net = tf.layers.dense(heros, hidden_nums, activation=activation)
+        net = tf.layers.dense(data, hidden_nums, activation=activation)
         net = tf.layers.dense(net, hidden_nums, activation=activation)
         net = tf.layers.dense(net, hidden_nums, activation=activation)
         # net = tf.layers.dense(net, hidden_nums, activation=activation)
@@ -37,11 +39,13 @@ if __name__ == '__main__':
     wd = 1e-5
     val_num = 10000
     aug = True
+    result_name = 'nn_noonehotencoder3feat_3fc_100'
+    mode = 'all_feat'
 
     train_file = 'dota2Train.csv'
     test_file = 'dota2Test.csv'
-    train_data, train_label = read_data(train_file)
-    test_data, test_label = read_data(test_file)
+    train_data, train_label = read_data(train_file, shuffle=True)
+    test_data, test_label = read_data(test_file, shuffle=True)
 
     with tf.Graph().as_default():
         # build graph
@@ -71,6 +75,21 @@ if __name__ == '__main__':
             if val_num:
                 val_data, val_label = data_aug_tf(val_data, val_label)
 
+        # feature process
+        if mode == 'only_heroes':
+            train_data = train_data[:, 3:]
+            test_data = test_data[:, 3:]
+            if val_num:
+                val_data = val_data[:, 3:]
+        elif mode == 'all_feat':
+            pass
+        elif mode == 'one_hot_all_feat':
+            train_data, test_data, val_data = tf.py_func(onehot_encode, [train_data, test_data, val_data],
+                                                         [tf.float32, tf.float32, tf.float32])
+            train_data.set_shape(train_label.shape.as_list()+[172])
+            test_data.set_shape(test_label.shape.as_list() + [172])
+            val_data.set_shape(val_label.shape.as_list() + [172])
+
         # shuffle
         def select_batch(train_data, train_label):
             train_label = tf.expand_dims(tf.cast(train_label, dtype=tf.float32), axis=1)
@@ -95,10 +114,11 @@ if __name__ == '__main__':
 
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
+        start = time.time()
         with tf.Session(config=config) as sess:
             init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
             sess.run(init)
-            print_freq = 100
+            print_freq = 30
             train_acc_ = 0
             xent_loss_ = 0
             reg_loss_ = 0
@@ -110,7 +130,7 @@ if __name__ == '__main__':
                 xent_loss_ += ret[1]
                 reg_loss_ += ret[2]
 
-                if step % 100 == 0:
+                if step % print_freq == 0 and step > 0:
                     # Print training
                     train_acc_ /= print_freq
                     xent_loss_ /= print_freq
@@ -123,9 +143,9 @@ if __name__ == '__main__':
                         ret = sess.run([train_score, train_label, val_score, val_label],
                                        feed_dict={batch_size: 0})
                         train_score_, train_label_, val_score_, val_label_ = ret
-                        tprs, fprs, recalls, precisions, acc = evaluate(train_score_, train_label_,
+                        tprs, fprs, recalls, precisions, val_acc = evaluate(train_score_, train_label_,
                                                                         val_score_, val_label_)
-                        print("Validation accuracy: {}".format(acc))
+                        print("Validation accuracy: {}".format(val_acc))
 
                     # Test
                     ret = sess.run([train_score, train_label, test_score, test_label],
@@ -134,3 +154,17 @@ if __name__ == '__main__':
                     tprs, fprs, recalls, precisions, acc = evaluate(train_score_, train_label_,
                                                                     test_score_, test_label_)
                     print("Test accuracy: {}".format(acc))
+
+                    # write results
+                    dur = time.time() - start
+                    result_path = os.path.join('result', result_name + '_{}step.pickle'.format(step))
+                    with open(result_path, 'wb') as f:
+                        pickle.dump({'tprs': tprs,
+                                     'fprs': fprs,
+                                     'recalls': recalls,
+                                     'precisions': precisions,
+                                     'accuracy': acc,
+                                     'time': dur,
+                                     'val_acc': val_acc,
+                                     'loss': xent_loss_}, f)
+                    print("Time: {} s, accuracy: {}%".format(dur, acc))

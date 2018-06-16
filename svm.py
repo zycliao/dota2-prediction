@@ -9,6 +9,7 @@ import time
 
 if __name__ == '__main__':
     result_name = 'svm_onlyheroes' + '.pickle'
+    mode = 'one_hot_all_feat'
     train_file = 'dota2Train.csv'
     test_file = 'dota2Test.csv'
 
@@ -21,9 +22,14 @@ if __name__ == '__main__':
     test_data = test_data[:, :]
     test_label = test_label[:]
     test_data, test_label = data_aug_np(test_data, test_label)
-    train_data = train_data[:, 3:]
-    test_data = test_data[:, 3:]
-    # train_data, test_data = onehot_encode([train_data, test_data])
+
+    if mode == 'only_heroes':
+        train_data = train_data[:, 3:]
+        test_data = test_data[:, 3:]
+    elif mode == 'all_feat':
+        pass
+    elif mode == 'one_hot_all_feat':
+        train_data, test_data = onehot_encode(train_data, test_data)
 
     start = time.time()
     classifier = svm.SVC(probability=True)

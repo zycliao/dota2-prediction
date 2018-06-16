@@ -4,13 +4,15 @@ import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
 
 
-def read_data(path):
+def read_data(path, shuffle=False):
     data = []
     with open(path) as f:
         lines = csv.reader(f)
         for line in lines:
             data.append(map(int, line))
     data = np.array(data)
+    if shuffle:
+        np.random.shuffle(data)
     label = data[:, 0]
     data = data[:, 1:]
     label = (label + 1) / 2
@@ -35,7 +37,7 @@ def data_aug_np(data, label):
     return data, label
 
 
-def onehot_encode(data_list):
+def onehot_encode(*data_list):
     data_len = map(lambda x: x.shape[0], data_list)
     data = np.concatenate(data_list, axis=0)
     encoder1 = OneHotEncoder()
@@ -49,6 +51,6 @@ def onehot_encode(data_list):
     ret_data = []
     for one_len in data_len:
         right_idx = left_idx + one_len
-        ret_data.append(data[left_idx: right_idx, :])
+        ret_data.append(data[left_idx: right_idx, :].astype(np.float32))
         left_idx = right_idx
     return ret_data
