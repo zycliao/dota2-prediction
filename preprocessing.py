@@ -17,12 +17,21 @@ def read_data(path):
     return data, label
 
 
-def data_aug(data, label):
+def data_aug_tf(data, label):
     n, c = data.shape.as_list()
     label = tf.concat([label, 1 - label], axis=0)
     reverse_mask = tf.concat([tf.ones([n, 3]), -1 * tf.ones([n, 113])], axis=1)
     data_reverse = data * reverse_mask
     data = tf.concat([data, data_reverse], axis=0)
+    return data, label
+
+
+def data_aug_np(data, label):
+    n, c = data.shape
+    label = np.concatenate([label, 1 - label], axis=0)
+    reverse_mask = np.concatenate([np.ones([n, 3]), -1 * np.ones([n, 113])], axis=1)
+    data_reverse = data * reverse_mask
+    data = np.concatenate([data, data_reverse], axis=0)
     return data, label
 
 

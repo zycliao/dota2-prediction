@@ -1,5 +1,5 @@
 import tensorflow as tf
-from preprocessing import read_data, data_aug
+from preprocessing import read_data, data_aug_tf
 import os
 from evaluate import evaluate
 from tensorflow.contrib.layers import xavier_initializer
@@ -66,10 +66,10 @@ if __name__ == '__main__':
 
         # data augment
         if aug:
-            train_data, train_label = data_aug(train_data, train_label)
-            test_data, test_label = data_aug(test_data, test_label)
+            train_data, train_label = data_aug_tf(train_data, train_label)
+            test_data, test_label = data_aug_tf(test_data, test_label)
             if val_num:
-                val_data, val_label = data_aug(val_data, val_label)
+                val_data, val_label = data_aug_tf(val_data, val_label)
 
         # shuffle
         def select_batch(train_data, train_label):
