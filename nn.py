@@ -10,6 +10,15 @@ from tensorflow.contrib.layers import l2_regularizer
 
 
 def nn(data, label, wd_rate=None, training=True, reuse=False):
+    """
+    Construct the neural network
+    :param data: input data
+    :param label: 0/1 label
+    :param wd_rate: weight decay rate
+    :param training: whether training or not
+    :param reuse: reuse this network
+    :return:
+    """
     with tf.variable_scope('fcnn', reuse=reuse,
                            initializer=xavier_initializer(),
                            regularizer=l2_regularizer(wd_rate) if training else None):
@@ -18,8 +27,6 @@ def nn(data, label, wd_rate=None, training=True, reuse=False):
         net = tf.layers.dense(data, hidden_nums, activation=activation)
         net = tf.layers.dense(net, hidden_nums, activation=activation)
         net = tf.layers.dense(net, hidden_nums, activation=activation)
-        # net = tf.layers.dense(net, hidden_nums, activation=activation)
-        # net = tf.layers.dropout(net, 0.5, training=training)
         out = tf.layers.dense(net, 2)
         score = tf.nn.softmax(out)
         predict = tf.arg_max(out, 1, output_type=tf.int32)
@@ -86,9 +93,10 @@ if __name__ == '__main__':
         elif mode == 'one_hot_all_feat':
             train_data, test_data, val_data = tf.py_func(onehot_encode, [train_data, test_data, val_data],
                                                          [tf.float32, tf.float32, tf.float32])
-            train_data.set_shape(train_label.shape.as_list()+[172])
+            train_data.set_shape(train_label.shape.as_list() + [172])
             test_data.set_shape(test_label.shape.as_list() + [172])
             val_data.set_shape(val_label.shape.as_list() + [172])
+
 
         # shuffle
         def select_batch(train_data, train_label):
@@ -98,6 +106,8 @@ if __name__ == '__main__':
             train_data = all_train[:, 1:][:batch_size, :]
             train_label = tf.cast(all_train[:, 0], dtype=tf.int32)[:batch_size]
             return train_data, train_label
+
+
         train_data, train_label = tf.cond(batch_size > 0, lambda: select_batch(train_data, train_label),
                                           lambda: (train_data, train_label))
 
@@ -144,7 +154,7 @@ if __name__ == '__main__':
                                        feed_dict={batch_size: 0})
                         train_score_, train_label_, val_score_, val_label_ = ret
                         tprs, fprs, recalls, precisions, val_acc = evaluate(train_score_, train_label_,
-                                                                        val_score_, val_label_)
+                                                                            val_score_, val_label_)
                         print("Validation accuracy: {}".format(val_acc))
 
                     # Test

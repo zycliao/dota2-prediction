@@ -2,6 +2,13 @@ import numpy as np
 
 
 def calc_metrics(thresh, predict_score, label):
+    """
+    Given a threshold, calculate metrics
+    :param thresh: threshold
+    :param predict_score: predicted scores from 0-1
+    :param label: 0/1 labels
+    :return: tpr, fpr, recall rate, precision, accuracy
+    """
     predict = predict_score[:, 1] > thresh
     tp = np.sum(np.logical_and(label, predict), dtype=np.float32)
     fp = np.sum(np.logical_and(np.logical_not(label), predict), dtype=np.float32)

@@ -1,7 +1,6 @@
 from preprocessing import read_data, onehot_encode, data_aug_np
 from sklearn import svm
 from evaluate import evaluate
-import numpy as np
 import pickle
 import os
 import time
@@ -34,10 +33,8 @@ if __name__ == '__main__':
     start = time.time()
     classifier = svm.SVC(probability=True)
     classifier.fit(train_data, train_label)
-    train_score = classifier.predict_log_proba(train_data)
-    test_score = classifier.predict_log_proba(test_data)
-    train_score = np.exp(train_score)
-    test_score = np.exp(test_score)
+    train_score = classifier.predict_proba(train_data)
+    test_score = classifier.predict_proba(test_data)
     tprs, fprs, recalls, precisions, acc = evaluate(train_score, train_label, test_score, test_label)
     dur = time.time() - start
 

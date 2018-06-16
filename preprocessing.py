@@ -5,6 +5,12 @@ from sklearn.preprocessing import OneHotEncoder
 
 
 def read_data(path, shuffle=False):
+    """
+    read data set
+    :param path: csv file path
+    :param shuffle: whether to shuffle
+    :return: the numpy array of data and labels
+    """
     data = []
     with open(path) as f:
         lines = csv.reader(f)
@@ -20,6 +26,12 @@ def read_data(path, shuffle=False):
 
 
 def data_aug_tf(data, label):
+    """
+    data augment tensor form
+    :param data:
+    :param label:
+    :return: augmented data and labels
+    """
     n, c = data.shape.as_list()
     label = tf.concat([label, 1 - label], axis=0)
     reverse_mask = tf.concat([tf.ones([n, 3]), -1 * tf.ones([n, 113])], axis=1)
@@ -29,6 +41,12 @@ def data_aug_tf(data, label):
 
 
 def data_aug_np(data, label):
+    """
+    data augment numpy form
+    :param data:
+    :param label:
+    :return: augmented data and labels
+    """
     n, c = data.shape
     label = np.concatenate([label, 1 - label], axis=0)
     reverse_mask = np.concatenate([np.ones([n, 3]), -1 * np.ones([n, 113])], axis=1)
@@ -38,6 +56,11 @@ def data_aug_np(data, label):
 
 
 def onehot_encode(*data_list):
+    """
+    one-hot encode the features
+    :param data_list: all arrays that need to be one-hot encoded
+    :return: arrays that is one-hot encoded
+    """
     data_len = map(lambda x: x.shape[0], data_list)
     data = np.concatenate(data_list, axis=0)
     encoder1 = OneHotEncoder()
